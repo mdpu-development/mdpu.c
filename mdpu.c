@@ -29,6 +29,7 @@ typedef enum {
     OP_DIVIDE,
     OP_STORE,
     OP_LOAD,
+    OP_LOAD_IMMEDIATE,
     OP_PUSH,
     OP_POP,
     OP_JMP,
@@ -229,13 +230,10 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
                 store(pu, instr.reg1_x, instr.reg1_y, instr.addr_x, instr.addr_y);
                 break;
             case OP_LOAD:
-                if (instr.addr_x == -1 && instr.addr_y == -1) {
-                    // Load immediate value into register
-                    pu->registers[instr.reg1_x][instr.reg1_y] = instr.immediate;
-                } else {
-                    // Load value from memory into register
-                    load(pu, instr.addr_x, instr.addr_y, instr.reg1_x, instr.reg1_y);
-                }
+                load(pu, instr.addr_x, instr.addr_y, instr.reg1_x, instr.reg1_y);
+                break;
+            case OP_LOAD_IMMEDIATE:
+                pu->registers[instr.reg1_x][instr.reg1_y] = instr.immediate;
                 break;
             case OP_PUSH:
                 push(pu, instr.reg1_x, instr.reg1_y);
@@ -380,14 +378,14 @@ int main(int argc, char *argv[]) {
     initialize(&pu, num_registers_x, num_registers_y, memory_size_x, memory_size_y);
 
     Instruction program[] = {
-        {OP_LOAD, 0, 0, 0, 0, 0, 0, -1, -1, 1},    // LOAD 1 into R0_0
-        {OP_LOAD, 0, 1, 0, 0, 0, 0, -1, -1, 2},    // LOAD 2 into R0_1
-        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0, 0},       // ADD R0_0 and R0_1, store result in R1_0
-        {OP_SUBTRACT, 0, 1, 0, 0, 1, 1, 0, 0, 0},  // SUBTRACT R0_1 from R0_0, store result in R1_1
-        {OP_MULTIPLY, 0, 0, 0, 1, 2, 0, 0, 0, 0},  // MULTIPLY R0_0 and R0_1, store result in R2_0
-        {OP_DIVIDE, 2, 0, 0, 1, 2, 1, 0, 0, 0},    // DIVIDE R2_0 by R0_1, store result in R2_1
-        // {OP_JMP, 0, 0, 0, 0, 0, 0, 0, 0, 9},       // JMP to instruction 9 (Infinte loop. MDPU will shut off automatically)
-        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0}       // HALT
+        {OP_LOAD_IMMEDIATE, 0, 0, 0, 0, 0, 0, -1, -1, 1},    // LOAD 1 into R0_0
+        {OP_LOAD_IMMEDIATE, 0, 1, 0, 0, 0, 0, -1, -1, 2},    // LOAD 2 into R0_1
+        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0, 0},                 // ADD R0_0 and R0_1, store result in R1_0
+        {OP_SUBTRACT, 0, 1, 0, 0, 1, 1, 0, 0, 0},            // SUBTRACT R0_1 from R0_0, store result in R1_1
+        {OP_MULTIPLY, 0, 0, 0, 1, 2, 0, 0, 0, 0},            // MULTIPLY R0_0 and R0_1, store result in R2_0
+        {OP_DIVIDE, 2, 0, 0, 1, 2, 1, 0, 0, 0},              // DIVIDE R2_0 by R0_1, store result in R2_1
+        // {OP_JMP, 0, 0, 0, 0, 0, 0, 0, 0, 9},                 // JMP to instruction 9 (Infinte loop. MDPU will shut off automatically)
+        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0}                 // HALT
     };
     int program_size = sizeof(program) / sizeof(Instruction);
 

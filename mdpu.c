@@ -21,9 +21,9 @@ typedef struct {
 // Define opcodes
 typedef enum {
     OP_ADD,
-    OP_SUBTRACT,
-    OP_MULTIPLY,
-    OP_DIVIDE,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
     OP_STORE,
     OP_LOAD,
     OP_LOAD_IMMEDIATE,
@@ -32,16 +32,27 @@ typedef enum {
     OP_JMP,
     OP_JZ,
     OP_JNZ,
+    OP_MOV,
+    OP_JE,
+    OP_JNE,
+    OP_AND,
+    OP_OR,
+    OP_XOR,
+    OP_NOT,
+    OP_SHL,
+    OP_SHR,
+    OP_CMP,
+    OP_TEST,
     OP_HALT
 } Opcode;
 
 // Define the structure of an instruction
 typedef struct {
     Opcode opcode;
-    int reg1;   // First register index
-    int reg2;   // Second register index
-    int reg3;   // Destination register index
-    int addr;   // Memory address or jump address
+    int reg1;      // First register index
+    int reg2;      // Second register index
+    int reg3;      // Destination register index
+    int addr;      // Memory address or jump address
     int immediate; // Immediate value
 } Instruction;
 
@@ -84,20 +95,40 @@ void free_processing_unit(ProcessingUnit *pu) {
     }
 }
 
+// Helper function to check register bounds
+void check_register_bounds(ProcessingUnit *pu, int reg) {
+    if (reg < 0 || reg >= pu->num_registers) {
+        printf("Error: Register index out of bounds: R%d\n", reg);
+        exit(1);
+    }
+}
+
 // ++++++++++++++++++++++++++++++ Arithmetic operations ++++++++++++++++++++++++++++++ //
 void add(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
     pu->registers[reg3] = pu->registers[reg1] + pu->registers[reg2];
 }
 
 void subtract(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
     pu->registers[reg3] = pu->registers[reg1] - pu->registers[reg2];
 }
 
 void multiply(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
     pu->registers[reg3] = pu->registers[reg1] * pu->registers[reg2];
 }
 
 void divide(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
     if (pu->registers[reg2] != 0) {
         pu->registers[reg3] = pu->registers[reg1] / pu->registers[reg2];
     } else {
@@ -108,6 +139,7 @@ void divide(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
 
 // ++++++++++++++++++++++++++++++ Memory operations ++++++++++++++++++++++++++++++ //
 void store(ProcessingUnit *pu, int reg, int addr) {
+    check_register_bounds(pu, reg);
     if (addr >= 0 && addr < pu->memory_size) {
         pu->memory[addr] = pu->registers[reg];
     } else {
@@ -117,6 +149,7 @@ void store(ProcessingUnit *pu, int reg, int addr) {
 }
 
 void load(ProcessingUnit *pu, int addr, int reg) {
+    check_register_bounds(pu, reg);
     if (addr >= 0 && addr < pu->memory_size) {
         pu->registers[reg] = pu->memory[addr];
     } else {
@@ -127,6 +160,7 @@ void load(ProcessingUnit *pu, int addr, int reg) {
 
 // ++++++++++++++++++++++++++++++ Stack operations ++++++++++++++++++++++++++++++ //
 void push(ProcessingUnit *pu, int reg) {
+    check_register_bounds(pu, reg);
     if (pu->stack_pointer >= 0) {
         pu->memory[pu->stack_pointer] = pu->registers[reg];
         pu->stack_pointer--;
@@ -137,6 +171,7 @@ void push(ProcessingUnit *pu, int reg) {
 }
 
 void pop(ProcessingUnit *pu, int reg) {
+    check_register_bounds(pu, reg);
     if (pu->stack_pointer < pu->memory_size - 1) {
         pu->stack_pointer++;
         pu->registers[reg] = pu->memory[pu->stack_pointer];
@@ -146,21 +181,106 @@ void pop(ProcessingUnit *pu, int reg) {
     }
 }
 
+void mov(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    pu->registers[reg1] = pu->registers[reg2];
+}
+
 // ++++++++++++++++++++++++++++++ Jump operations ++++++++++++++++++++++++++++++ //
 void jmp(int *instruction_pointer, int addr) {
     *instruction_pointer = addr;
 }
 
 void jz(ProcessingUnit *pu, int *instruction_pointer, int reg, int addr) {
+    check_register_bounds(pu, reg);
     if (pu->registers[reg] == 0) {
         *instruction_pointer = addr;
     }
 }
 
 void jnz(ProcessingUnit *pu, int *instruction_pointer, int reg, int addr) {
+    check_register_bounds(pu, reg);
     if (pu->registers[reg] != 0) {
         *instruction_pointer = addr;
     }
+}
+
+void je(ProcessingUnit *pu, int *instruction_pointer, int reg1, int reg2, int addr) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    if (pu->registers[reg1] == pu->registers[reg2]) {
+        *instruction_pointer = addr;
+    }
+}
+
+void jne(ProcessingUnit *pu, int *instruction_pointer, int reg1, int reg2, int addr) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    if (pu->registers[reg1] != pu->registers[reg2]) {
+        *instruction_pointer = addr;
+    }
+}
+
+// ++++++++++++++++++++++++++++++ Bitwise operations ++++++++++++++++++++++++++++++ //
+void and(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    pu->registers[reg3] = pu->registers[reg1] & pu->registers[reg2];
+}
+
+void or(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    pu->registers[reg3] = pu->registers[reg1] | pu->registers[reg2];
+}
+
+void xor(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    pu->registers[reg3] = pu->registers[reg1] ^ pu->registers[reg2];
+}
+
+void not(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    pu->registers[reg2] = ~pu->registers[reg1];
+}
+
+void shl(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    pu->registers[reg3] = pu->registers[reg1] << pu->registers[reg2];
+}
+
+void shr(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    pu->registers[reg3] = pu->registers[reg1] >> pu->registers[reg2];
+}
+
+// ++++++++++++++++++++++++++++++ Comparison operations ++++++++++++++++++++++++++++++ //
+void cmp(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    if (pu->registers[reg1] == pu->registers[reg2]) {
+        pu->registers[0] = 0;
+    } else if (pu->registers[reg1] < pu->registers[reg2]) {
+        pu->registers[0] = -1;
+    } else {
+        pu->registers[0] = 1;
+    }
+}
+
+void test(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    pu->registers[0] = pu->registers[reg1] & pu->registers[reg2];
 }
 
 // ++++++++++++++++++++++++++++++ Program execution ++++++++++++++++++++++++++++++ //
@@ -180,13 +300,13 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
             case OP_ADD:
                 add(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_SUBTRACT:
+            case OP_SUB:
                 subtract(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_MULTIPLY:
+            case OP_MUL:
                 multiply(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_DIVIDE:
+            case OP_DIV:
                 divide(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
             case OP_STORE:
@@ -196,6 +316,7 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
                 load(pu, instr.addr, instr.reg1);
                 break;
             case OP_LOAD_IMMEDIATE:
+                check_register_bounds(pu, instr.reg1);
                 pu->registers[instr.reg1] = instr.immediate;
                 break;
             case OP_PUSH:
@@ -213,6 +334,39 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
             case OP_JNZ:
                 jnz(pu, &instruction_pointer, instr.reg1, instr.addr);
                 continue;
+            case OP_MOV:
+                mov(pu, instr.reg1, instr.reg2);
+                break;
+            case OP_JE:
+                je(pu, &instruction_pointer, instr.reg1, instr.reg2, instr.addr);
+                break;
+            case OP_JNE:
+                jne(pu, &instruction_pointer, instr.reg1, instr.reg2, instr.addr);
+                break;
+            case OP_AND:
+                and(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case OP_OR:
+                or(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case OP_XOR:
+                xor(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case OP_NOT:
+                not(pu, instr.reg1, instr.reg2);
+                break;
+            case OP_SHL:
+                shl(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case OP_SHR:
+                shr(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case OP_CMP:
+                cmp(pu, instr.reg1, instr.reg2);
+                break;
+            case OP_TEST:
+                test(pu, instr.reg1, instr.reg2);
+                break;
             case OP_HALT:
                 return;
         }

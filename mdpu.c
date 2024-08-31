@@ -279,24 +279,25 @@ void post_run(ProcessingUnitState *state, ProcessingUnit *pu) {
     free_processing_unit_state(state);
 }
 
+int parse_dimensions(char *size_str) {
+    int total_size = 1;
+    char *token = strtok(size_str, "x");
+    while (token != NULL) {
+        total_size *= atoi(token);
+        token = strtok(NULL, "x");
+    }
+    return total_size;
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        printf("Usage: %s <register_size_x>x<register_size_y> <memory_size_x>x<memory_size_y>\n", argv[0]);
+        printf("Usage: %s <register_size_dimensions> <memory_size_dimensions>\n", argv[0]);
         exit(1);
     }
 
-    // Split the args by `x` to get register_x, register_y, memory_x, memory_y
-    char *register_size = argv[1];
-    char *memory_size = argv[2];
-
-    // Split the register size by `x` and multiply x and y to get the total number of registers
-    char *register_x = strtok(register_size, "x");
-    char *register_y = strtok(NULL, "x");
-    char *memory_x = strtok(memory_size, "x");
-    char *memory_y = strtok(NULL, "x");
-
-    int total_registers = atoi(register_x) * atoi(register_y);
-    int total_memory = atoi(memory_x) * atoi(memory_y);
+    // Parse the dimensions for registers and memory
+    int total_registers = parse_dimensions(argv[1]);
+    int total_memory = parse_dimensions(argv[2]);
 
     ProcessingUnit pu;
     initialize(&pu, total_registers, total_memory);

@@ -141,6 +141,7 @@ void divide(ProcessingUnit *pu, int reg1_x, int reg1_y, int reg2_x, int reg2_y, 
         pu->registers[reg3_x][reg3_y] = pu->registers[reg1_x][reg1_y] / pu->registers[reg2_x][reg2_y];
     } else {
         printf("Error: Division by zero\n");
+        exit(1);
     }
 }
 
@@ -164,6 +165,7 @@ void push(ProcessingUnit *pu, int reg_x, int reg_y) {
         }
     } else {
         printf("Error: Stack overflow\n");
+        exit(1);
     }
 }
 
@@ -177,6 +179,7 @@ void pop(ProcessingUnit *pu, int reg_x, int reg_y) {
         pu->registers[reg_x][reg_y] = pu->memory[pu->stack_pointer_x][pu->stack_pointer_y];
     } else {
         printf("Error: Stack underflow\n");
+        exit(1);
     }
 }
 
@@ -198,8 +201,16 @@ void jnz(ProcessingUnit *pu, int *instruction_pointer, int reg_x, int reg_y, int
 }
 
 // ++++++++++++++++++++++++++++++ Program execution ++++++++++++++++++++++++++++++ //
-void execute_program(ProcessingUnit *pu, Instruction *program, int program_size) {
+void execute_program(ProcessingUnit *pu, Instruction *program, int program_size, int mic) {
+    const int MAX_INSTRUCTION_COUNT = mic;
+    int instruction_count = 0;
+
     for (int i = 0; i < program_size; i++) {
+        if (instruction_count >= MAX_INSTRUCTION_COUNT) {
+            printf("Error: Maximum instruction count exceeded, possible infinite loop\n");
+            exit(1);
+        }
+
         Instruction instr = program[i];
         switch (instr.opcode) {
             case OP_ADD:
@@ -244,6 +255,7 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size)
             case OP_HALT:
                 return;
         }
+        instruction_count++;
     }
 }
 
@@ -269,8 +281,8 @@ void free_processing_unit_state(ProcessingUnitState *state) {
 }
 
 // Function to run the program and return the state
-ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_size) {
-    execute_program(pu, program, program_size);
+ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_size, int mic) {
+    execute_program(pu, program, program_size, mic);
 
     ProcessingUnitState state;
     state.stack_size_x = pu->memory_size_x - pu->stack_pointer_x - 1;
@@ -323,10 +335,15 @@ ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_si
 
 int main(int argc, char *argv[]) {
     // Grab MDPU configuration from command line arguments
-    if (argc != 5) {
-        printf("Usage: %s <register_x> <register_y> <memory_x> <memory_y>\n", argv[0]);
+    if (argc < 5) {
+        printf("Usage: %s <register_x> <register_y> <memory_x> <memory_y> <max_instruction_count:Optional>\n", argv[0]);
         return 1;
     }
+    int mic = 10000;
+    if (argc == 6) {
+        int mic = atoi(argv[5]);
+    }
+
 
     int num_registers_x = atoi(argv[1]);
     int num_registers_y = atoi(argv[2]);
@@ -340,12 +357,15 @@ int main(int argc, char *argv[]) {
         {OP_LOAD, 0, 0, 0, 0, 0, 0, -1, -1, 1},    // LOAD 1 into R0_0
         {OP_LOAD, 0, 1, 0, 0, 0, 0, -1, -1, 2},    // LOAD 2 into R0_1
         {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0, 0},       // ADD R0_0 and R0_1, store result in R1_0
-        {OP_PUSH, 1, 0, 0, 0, 0, 0, 0, 0, 0},      // PUSH R1_0 onto stack
+        {OP_SUBTRACT, 0, 1, 0, 0, 1, 1, 0, 0, 0},  // SUBTRACT R0_1 from R0_0, store result in R1_1
+        {OP_MULTIPLY, 0, 0, 0, 1, 2, 0, 0, 0, 0},  // MULTIPLY R0_0 and R0_1, store result in R2_0
+        {OP_DIVIDE, 2, 0, 0, 1, 2, 1, 0, 0, 0},    // DIVIDE R2_0 by R0_1, store result in R2_1
+        // {OP_JMP, 0, 0, 0, 0, 0, 0, 0, 0, 9},       // JMP to instruction 9 (Infinte loop. MDPU will shut off automatically)
         {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0}       // HALT
     };
     int program_size = sizeof(program) / sizeof(Instruction);
 
-    ProcessingUnitState state = run(&pu, program, program_size);
+    ProcessingUnitState state = run(&pu, program, program_size, mic);
 
     // Print the state of the stack
     printf("Stack State:\n");

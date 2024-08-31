@@ -48,6 +48,7 @@ typedef struct {
     int reg3_y;
     int addr_x;
     int addr_y;
+    int immediate;
 } Instruction;
 
 // Function to initialize the processing unit
@@ -217,7 +218,13 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size)
                 store(pu, instr.reg1_x, instr.reg1_y, instr.addr_x, instr.addr_y);
                 break;
             case OP_LOAD:
-                load(pu, instr.addr_x, instr.addr_y, instr.reg1_x, instr.reg1_y);
+                if (instr.addr_x == -1 && instr.addr_y == -1) {
+                    // Load immediate value into register
+                    pu->registers[instr.reg1_x][instr.reg1_y] = instr.immediate;
+                } else {
+                    // Load value from memory into register
+                    load(pu, instr.addr_x, instr.addr_y, instr.reg1_x, instr.reg1_y);
+                }
                 break;
             case OP_PUSH:
                 push(pu, instr.reg1_x, instr.reg1_y);
@@ -263,9 +270,6 @@ void free_processing_unit_state(ProcessingUnitState *state) {
 
 // Function to run the program and return the state
 ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_size) {
-    pu->registers[0][0] = 10;
-    pu->registers[0][1] = 20;
-
     execute_program(pu, program, program_size);
 
     ProcessingUnitState state;
@@ -333,9 +337,11 @@ int main(int argc, char *argv[]) {
     initialize(&pu, num_registers_x, num_registers_y, memory_size_x, memory_size_y);
 
     Instruction program[] = {
-        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0},    // ADD R0_0 and R0_1, store result in R1_0
-        {OP_PUSH, 1, 0, 0, 0, 0, 0, 0, 0},   // PUSH R1_0 onto stack
-        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0}    // HALT
+        {OP_LOAD, 0, 0, 0, 0, 0, 0, -1, -1, 1},    // LOAD 1 into R0_0
+        {OP_LOAD, 0, 1, 0, 0, 0, 0, -1, -1, 2},    // LOAD 2 into R0_1
+        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0, 0},       // ADD R0_0 and R0_1, store result in R1_0
+        {OP_PUSH, 1, 0, 0, 0, 0, 0, 0, 0, 0},      // PUSH R1_0 onto stack
+        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0}       // HALT
     };
     int program_size = sizeof(program) / sizeof(Instruction);
 

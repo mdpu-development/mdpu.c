@@ -46,35 +46,75 @@ typedef struct {
     int addr_y;
 } Instruction;
 
-// ++++++++++++++++++++++++++++++ Initialization ++++++++++++++++++++++++++++++ //
+// Function to initialize the processing unit
 void initialize(ProcessingUnit *pu, int num_registers_x, int num_registers_y, int memory_size_x, int memory_size_y) {
     pu->num_registers_x = num_registers_x;
     pu->num_registers_y = num_registers_y;
     pu->memory_size_x = memory_size_x;
     pu->memory_size_y = memory_size_y;
+    
     pu->registers = (int **)malloc(num_registers_x * sizeof(int *));
-    pu->memory = (int **)malloc(memory_size_x * sizeof(int *));
-    for (int i = 0; i < num_registers_x; i++) {
-        pu->registers[i] = (int *)malloc(num_registers_y * sizeof(int));
-    }
-    for (int i = 0; i < memory_size_x; i++) {
-        pu->memory[i] = (int *)malloc(memory_size_y * sizeof(int));
-    }
-    pu->stack_pointer_x = memory_size_x - 1; // Initialize stack pointer to the top of the memory
-    pu->stack_pointer_y = memory_size_y - 1; // Initialize stack pointer to the top of the memory
-    if (pu->registers == NULL || pu->memory == NULL) {
-        printf("Memory allocation failed\n");
+    if (pu->registers == NULL) {
+        printf("Memory allocation failed for registers\n");
         exit(1);
     }
+    
+    for (int i = 0; i < num_registers_x; i++) {
+        pu->registers[i] = (int *)malloc(num_registers_y * sizeof(int));
+        if (pu->registers[i] == NULL) {
+            printf("Memory allocation failed for registers row %d\n", i);
+            exit(1);
+        }
+    }
+    
+    pu->memory = (int **)malloc(memory_size_x * sizeof(int *));
+    if (pu->memory == NULL) {
+        printf("Memory allocation failed for memory\n");
+        exit(1);
+    }
+    
+    for (int i = 0; i < memory_size_x; i++) {
+        pu->memory[i] = (int *)malloc(memory_size_y * sizeof(int));
+        if (pu->memory[i] == NULL) {
+            printf("Memory allocation failed for memory row %d\n", i);
+            exit(1);
+        }
+    }
+
+    pu->stack_pointer_x = memory_size_x - 1; // Initialize stack pointer to the top of the memory
+    pu->stack_pointer_y = memory_size_y - 1; // Initialize stack pointer to the top of the memory
+
     for (int i = 0; i < num_registers_x; i++) {
         for (int j = 0; j < num_registers_y; j++) {
             pu->registers[i][j] = 0;
         }
     }
+    
     for (int i = 0; i < memory_size_x; i++) {
         for (int j = 0; j < memory_size_y; j++) {
             pu->memory[i][j] = 0;
         }
+    }
+}
+
+// Function to free the memory allocated for the processing unit
+void free_processing_unit(ProcessingUnit *pu) {
+    if (pu->registers != NULL) {
+        for (int i = 0; i < pu->num_registers_x; i++) {
+            if (pu->registers[i] != NULL) {
+                free(pu->registers[i]);
+            }
+        }
+        free(pu->registers);
+    }
+    
+    if (pu->memory != NULL) {
+        for (int i = 0; i < pu->memory_size_x; i++) {
+            if (pu->memory[i] != NULL) {
+                free(pu->memory[i]);
+            }
+        }
+        free(pu->memory);
     }
 }
 
@@ -150,33 +190,76 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size)
                 break;
             case OP_HALT:
                 return;
-            default:
-                printf("Unknown opcode: %d\n", instr.opcode);
-                return;
         }
     }
 }
 
-// ++++++++++++++++++++++++++++++ Example usage ++++++++++++++++++++++++++++++ //
+// Function to free the memory allocated for the state
+void free_processing_unit_state(ProcessingUnitState *state) {
+    if (state->registers != NULL) {
+        for (int i = 0; i < state->stack_size_x; i++) {
+            if (state->registers[i] != NULL) {
+                free(state->registers[i]);
+            }
+        }
+        free(state->registers);
+    }
+    
+    if (state->stack != NULL) {
+        for (int i = 0; i < state->stack_size_x; i++) {
+            if (state->stack[i] != NULL) {
+                free(state->stack[i]);
+            }
+        }
+        free(state->stack);
+    }
+}
+
+// Function to run the program and return the state
 ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_size) {
-    // Initialize registers for the example
     pu->registers[0][0] = 10;
     pu->registers[0][1] = 20;
 
-    // Execute the program
     execute_program(pu, program, program_size);
 
-    // Prepare the state to return
     ProcessingUnitState state;
-    state.registers = (int **)malloc(pu->num_registers_x * sizeof(int *));
-    for (int i = 0; i < pu->num_registers_x; i++) {
-        state.registers[i] = (int *)malloc(pu->num_registers_y * sizeof(int));
-    }
     state.stack_size_x = pu->memory_size_x - pu->stack_pointer_x - 1;
     state.stack_size_y = pu->memory_size_y - pu->stack_pointer_y - 1;
+
+    // Allocate memory for the stack
     state.stack = (int **)malloc(state.stack_size_x * sizeof(int *));
+    if (state.stack == NULL) {
+        printf("Memory allocation failed for stack\n");
+        exit(1);
+    }
+    
     for (int i = 0; i < state.stack_size_x; i++) {
         state.stack[i] = (int *)malloc(state.stack_size_y * sizeof(int));
+        if (state.stack[i] == NULL) {
+            printf("Memory allocation failed for stack row %d\n", i);
+            exit(1);
+        }
+    }
+
+    for (int i = 0; i < state.stack_size_x; i++) {
+        for (int j = 0; j < state.stack_size_y; j++) {
+            state.stack[i][j] = pu->memory[pu->stack_pointer_x + 1 + i][pu->stack_pointer_y + 1 + j];
+        }
+    }
+
+    // Allocate memory for the registers
+    state.registers = (int **)malloc(pu->num_registers_x * sizeof(int *));
+    if (state.registers == NULL) {
+        printf("Memory allocation failed for state registers\n");
+        exit(1);
+    }
+    
+    for (int i = 0; i < pu->num_registers_x; i++) {
+        state.registers[i] = (int *)malloc(pu->num_registers_y * sizeof(int));
+        if (state.registers[i] == NULL) {
+            printf("Memory allocation failed for state registers row %d\n", i);
+            exit(1);
+        }
     }
 
     for (int i = 0; i < pu->num_registers_x; i++) {
@@ -184,60 +267,57 @@ ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_si
             state.registers[i][j] = pu->registers[i][j];
         }
     }
-    for (int i = 0; i < state.stack_size_x; i++) {
-        for (int j = 0; j < state.stack_size_y; j++) {
-            state.stack[i][j] = pu->memory[pu->stack_pointer_x + 1 + i][pu->stack_pointer_y + 1 + j];
-        }
-    }
 
     return state;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Grab MDPU configuration from command line arguments
+    if (argc != 5) {
+        printf("Usage: %s <register_x> <register_y> <memory_x> <memory_y>\n", argv[0]);
+        return 1;
+    }
+
+    int num_registers_x = atoi(argv[1]);
+    int num_registers_y = atoi(argv[2]);
+    int memory_size_x = atoi(argv[3]);
+    int memory_size_y = atoi(argv[4]);
+
     ProcessingUnit pu;
-    initialize(&pu, 4, 4, 10, 10);
+    initialize(&pu, num_registers_x, num_registers_y, memory_size_x, memory_size_y);
 
     Instruction program[] = {
-        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0},
-        {OP_SUBTRACT, 0, 0, 0, 1, 1, 1, 0, 1},
-        {OP_MULTIPLY, 0, 0, 0, 1, 1, 2, 0, 2},
-        {OP_DIVIDE, 0, 0, 0, 1, 1, 3, 0, 3},
-        {OP_STORE, 0, 0, 0, 0, 0, 0, 0, 4},
-        {OP_LOAD, 0, 0, 0, 0, 1, 0, 0, 4},
-        {OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0},
-        {OP_PUSH, 0, 1, 0, 1, 0, 0, 0, 0},
-        {OP_PUSH, 0, 2, 0, 2, 0, 0, 0, 0},
-        {OP_PUSH, 0, 3, 0, 3, 0, 0, 0, 0},
-        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0}
+        {OP_ADD, 0, 0, 0, 1, 1, 0, 0, 0},    // ADD R0_0 and R0_1, store result in R1_0
+        {OP_PUSH, 1, 0, 0, 0, 0, 0, 0, 0},   // PUSH R1_0 onto stack
+        {OP_HALT, 0, 0, 0, 0, 0, 0, 0, 0}    // HALT
     };
-
-    int program_size = sizeof(program) / sizeof(program[0]);
+    int program_size = sizeof(program) / sizeof(Instruction);
 
     ProcessingUnitState state = run(&pu, program, program_size);
 
-    printf("MDPU shape:\n");
-    printf("-- Registers: %dx%d\n", pu.num_registers_x, pu.num_registers_y);
-    printf("-- Memory: %dx%d\n\n", pu.memory_size_x, pu.memory_size_y);
-
-    printf("Registers:\n");
-
-    for (int i = 0; i < pu.num_registers_x; i++) {
-        printf("-- ");
-        for (int j = 0; j < pu.num_registers_y; j++) {
-            printf("%d ", state.registers[i][j]);
-        }
-        printf("\n\n");
-    }
-
-    printf("Stack:\n");
-
+    // Print the state of the stack
+    printf("Stack State:\n");
     for (int i = 0; i < state.stack_size_x; i++) {
-        printf("-- ");
+        printf("S%d: ", i);
         for (int j = 0; j < state.stack_size_y; j++) {
             printf("%d ", state.stack[i][j]);
         }
         printf("\n");
     }
+
+    // Print the state of the registers
+    printf("Registers State:\n");
+    for (int i = 0; i < pu.num_registers_x; i++) {
+        printf("R%d: ", i);
+        for (int j = 0; j < pu.num_registers_y; j++) {
+            printf("%d ", state.registers[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Free the allocated memory
+    free_processing_unit(&pu);
+    free_processing_unit_state(&state);
 
     return 0;
 }

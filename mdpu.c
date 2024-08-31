@@ -333,6 +333,32 @@ ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_si
     return state;
 }
 
+void post_run(ProcessingUnitState *state, ProcessingUnit *pu) {
+    // Print the state of the stack
+    printf("Stack State:\n");
+    for (int i = 0; i < state->stack_size_x; i++) {
+        printf("S%d: ", i);
+        for (int j = 0; j < state->stack_size_y; j++) {
+            printf("%d ", state->stack[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Print the state of the registers
+    printf("Registers State:\n");
+    for (int i = 0; i < pu->num_registers_x; i++) {
+        printf("R%d: ", i);
+        for (int j = 0; j < pu->num_registers_y; j++) {
+            printf("%d ", state->registers[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Free the allocated memory
+    free_processing_unit_state(state);
+    free_processing_unit(pu);
+}
+
 int main(int argc, char *argv[]) {
     // Grab MDPU configuration from command line arguments
     if (argc < 5) {
@@ -367,29 +393,6 @@ int main(int argc, char *argv[]) {
 
     ProcessingUnitState state = run(&pu, program, program_size, mic);
 
-    // Print the state of the stack
-    printf("Stack State:\n");
-    for (int i = 0; i < state.stack_size_x; i++) {
-        printf("S%d: ", i);
-        for (int j = 0; j < state.stack_size_y; j++) {
-            printf("%d ", state.stack[i][j]);
-        }
-        printf("\n");
-    }
-
-    // Print the state of the registers
-    printf("Registers State:\n");
-    for (int i = 0; i < pu.num_registers_x; i++) {
-        printf("R%d: ", i);
-        for (int j = 0; j < pu.num_registers_y; j++) {
-            printf("%d ", state.registers[i][j]);
-        }
-        printf("\n");
-    }
-
-    // Free the allocated memory
-    free_processing_unit(&pu);
-    free_processing_unit_state(&state);
-
-    return 0;
+    // Post Run
+    post_run(&state, &pu);
 }

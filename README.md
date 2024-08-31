@@ -1,2 +1,2 @@
-# mdpu
- The MDPU development repository.
+# mdpu.c
+MDPU emulator in a single file of pure C.

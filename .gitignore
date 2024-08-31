@@ -1,0 +1,6 @@
+# MDPU specific
+mdpu
+
+# IDE specific
+.vscode
+.idea

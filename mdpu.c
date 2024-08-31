@@ -30,6 +30,10 @@ typedef enum {
     OP_STORE,
     OP_LOAD,
     OP_PUSH,
+    OP_POP,
+    OP_JMP,
+    OP_JZ,
+    OP_JNZ,
     OP_HALT
 } Opcode;
 
@@ -162,6 +166,36 @@ void push(ProcessingUnit *pu, int reg_x, int reg_y) {
     }
 }
 
+void pop(ProcessingUnit *pu, int reg_x, int reg_y) {
+    if (pu->stack_pointer_x < pu->memory_size_x - 1 && pu->stack_pointer_y < pu->memory_size_y - 1) {
+        pu->stack_pointer_y++;
+        if (pu->stack_pointer_y >= pu->memory_size_y) {
+            pu->stack_pointer_y = 0;
+            pu->stack_pointer_x++;
+        }
+        pu->registers[reg_x][reg_y] = pu->memory[pu->stack_pointer_x][pu->stack_pointer_y];
+    } else {
+        printf("Error: Stack underflow\n");
+    }
+}
+
+// ++++++++++++++++++++++++++++++ Jump operations ++++++++++++++++++++++++++++++ //
+void jmp(int *instruction_pointer, int addr) {
+    *instruction_pointer = addr;
+}
+
+void jz(ProcessingUnit *pu, int *instruction_pointer, int reg_x, int reg_y, int addr) {
+    if (pu->registers[reg_x][reg_y] == 0) {
+        *instruction_pointer = addr;
+    }
+}
+
+void jnz(ProcessingUnit *pu, int *instruction_pointer, int reg_x, int reg_y, int addr) {
+    if (pu->registers[reg_x][reg_y] != 0) {
+        *instruction_pointer = addr;
+    }
+}
+
 // ++++++++++++++++++++++++++++++ Program execution ++++++++++++++++++++++++++++++ //
 void execute_program(ProcessingUnit *pu, Instruction *program, int program_size) {
     for (int i = 0; i < program_size; i++) {
@@ -187,6 +221,18 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size)
                 break;
             case OP_PUSH:
                 push(pu, instr.reg1_x, instr.reg1_y);
+                break;
+            case OP_POP:
+                pop(pu, instr.reg1_x, instr.reg1_y);
+                break;
+            case OP_JMP:
+                jmp(&i, instr.addr_x);
+                break;
+            case OP_JZ:
+                jz(pu, &i, instr.reg1_x, instr.reg1_y, instr.addr_x);
+                break;
+            case OP_JNZ:
+                jnz(pu, &i, instr.reg1_x, instr.reg1_y, instr.addr_x);
                 break;
             case OP_HALT:
                 return;

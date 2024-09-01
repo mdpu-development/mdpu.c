@@ -20,30 +20,33 @@ typedef struct {
 
 // Define opcodes
 typedef enum {
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV,
-    OP_STORE,
-    OP_LOAD,
-    OP_LOAD_IMMEDIATE,
-    OP_PUSH,
-    OP_POP,
-    OP_JMP,
-    OP_JZ,
-    OP_JNZ,
-    OP_MOV,
-    OP_JE,
-    OP_JNE,
-    OP_AND,
-    OP_OR,
-    OP_XOR,
-    OP_NOT,
-    OP_SHL,
-    OP_SHR,
-    OP_CMP,
-    OP_TEST,
-    OP_HALT
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    STORE,
+    LOAD,
+    LOAD_IMMEDIATE,
+    PUSH,
+    POP,
+    JMP,
+    JZ,
+    JNZ,
+    MOV,
+    JE,
+    JNE,
+    AND,
+    OR,
+    XOR,
+    NOT,
+    SHL,
+    SHR,
+    CMP,
+    TEST,
+    B,
+    BZ,
+    BNZ,
+    HALT
 } Opcode;
 
 // Define the structure of an instruction
@@ -132,7 +135,7 @@ void divide(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
     if (pu->registers[reg2] != 0) {
         pu->registers[reg3] = pu->registers[reg1] / pu->registers[reg2];
     } else {
-        printf("Error: Division by zero\n");
+        printf("Error: Division by zero on R%d of value %d\n", reg2, pu->registers[reg2]);
         exit(1);
     }
 }
@@ -283,6 +286,25 @@ void test(ProcessingUnit *pu, int reg1, int reg2) {
     pu->registers[0] = pu->registers[reg1] & pu->registers[reg2];
 }
 
+// ++++++++++++++++++++++++++++++ Branch operations ++++++++++++++++++++++++++++++ //
+void b(int *instruction_pointer, int addr) {
+    *instruction_pointer = addr;
+}
+
+void bz(ProcessingUnit *pu, int *instruction_pointer, int reg, int addr) {
+    check_register_bounds(pu, reg);
+    if (pu->registers[reg] == 0) {
+        *instruction_pointer = addr;
+    }
+}
+
+void bnz(ProcessingUnit *pu, int *instruction_pointer, int reg, int addr) {
+    check_register_bounds(pu, reg);
+    if (pu->registers[reg] != 0) {
+        *instruction_pointer = addr;
+    }
+}
+
 // ++++++++++++++++++++++++++++++ Program execution ++++++++++++++++++++++++++++++ //
 void execute_program(ProcessingUnit *pu, Instruction *program, int program_size, int mic) {
     const int MAX_INSTRUCTION_COUNT = mic;
@@ -297,77 +319,86 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
 
         Instruction instr = program[instruction_pointer];
         switch (instr.opcode) {
-            case OP_ADD:
+            case ADD:
                 add(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_SUB:
+            case SUB:
                 subtract(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_MUL:
+            case MUL:
                 multiply(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_DIV:
+            case DIV:
                 divide(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_STORE:
+            case STORE:
                 store(pu, instr.reg1, instr.addr);
                 break;
-            case OP_LOAD:
+            case LOAD:
                 load(pu, instr.addr, instr.reg1);
                 break;
-            case OP_LOAD_IMMEDIATE:
+            case LOAD_IMMEDIATE:
                 check_register_bounds(pu, instr.reg1);
                 pu->registers[instr.reg1] = instr.immediate;
                 break;
-            case OP_PUSH:
+            case PUSH:
                 push(pu, instr.reg1);
                 break;
-            case OP_POP:
+            case POP:
                 pop(pu, instr.reg1);
                 break;
-            case OP_JMP:
+            case JMP:
                 jmp(&instruction_pointer, instr.addr);
                 continue;
-            case OP_JZ:
+            case JZ:
                 jz(pu, &instruction_pointer, instr.reg1, instr.addr);
                 continue;
-            case OP_JNZ:
+            case JNZ:
                 jnz(pu, &instruction_pointer, instr.reg1, instr.addr);
                 continue;
-            case OP_MOV:
+            case MOV:
                 mov(pu, instr.reg1, instr.reg2);
                 break;
-            case OP_JE:
+            case JE:
                 je(pu, &instruction_pointer, instr.reg1, instr.reg2, instr.addr);
                 break;
-            case OP_JNE:
+            case JNE:
                 jne(pu, &instruction_pointer, instr.reg1, instr.reg2, instr.addr);
                 break;
-            case OP_AND:
+            case AND:
                 and(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_OR:
+            case OR:
                 or(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_XOR:
+            case XOR:
                 xor(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_NOT:
+            case NOT:
                 not(pu, instr.reg1, instr.reg2);
                 break;
-            case OP_SHL:
+            case SHL:
                 shl(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_SHR:
+            case SHR:
                 shr(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
-            case OP_CMP:
+            case CMP:
                 cmp(pu, instr.reg1, instr.reg2);
                 break;
-            case OP_TEST:
+            case TEST:
                 test(pu, instr.reg1, instr.reg2);
                 break;
-            case OP_HALT:
+            case B:
+                b(&instruction_pointer, instr.addr);
+                continue;
+            case BZ:
+                bz(pu, &instruction_pointer, instr.reg1, instr.addr);
+                continue;
+            case BNZ:
+                bnz(pu, &instruction_pointer, instr.reg1, instr.addr);
+                continue;
+            case HALT:
                 return;
         }
         instruction_pointer++;
@@ -458,11 +489,11 @@ int main(int argc, char *argv[]) {
 
     // Example program (OP codes with some dummy values)
     Instruction program[] = {
-        {OP_LOAD_IMMEDIATE, 0, 0, 0, 0, 10},
-        {OP_LOAD_IMMEDIATE, 1, 0, 0, 0, 20},
-        {OP_ADD, 0, 1, 2, 0, 0},
-        {OP_STORE, 2, 0, 0, 0, 0},
-        {OP_HALT, 0, 0, 0, 0, 0}
+        {LOAD_IMMEDIATE, 0, 0, 0, 0, 10},
+        {LOAD_IMMEDIATE, 1, 0, 0, 0, 20},
+        {ADD, 0, 1, 2, 0, 0},
+        {STORE, 2, 0, 0, 0, 0},
+        {HALT, 0, 0, 0, 0, 0}
     };
     int program_size = sizeof(program) / sizeof(program[0]);
 

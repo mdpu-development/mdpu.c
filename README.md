@@ -46,7 +46,7 @@ The MDPU is a theoretical processor. If it were to be implemented in hardware, i
 
 1. **Machine Learning**: The MDPU can be used to perform matrix operations for machine learning algorithms.
 2. **Image Processing**: The MDPU can be used to perform image processing operations.
-3. **Gaming**: The MDPU can be used to perform complex calculations for gaming.
+3. **Gaming**: The MDPU can be used to play resource intensive games.
 4. **Scientific Computing**: The MDPU can be used to perform complex calculations for scientific computing.
 5. **Data Processing**: The MDPU can be used to process large amounts of data.
 

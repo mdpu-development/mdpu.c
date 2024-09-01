@@ -5,6 +5,7 @@ MDPU emulator in a single file of pure C along with the official development rep
 - [mdpu.c](#mdpuc)
   - [Overview](#overview)
   - [Supported Opcodes](#supported-opcodes)
+  - [Practical Usage](#practical-usage)
   - [Usage](#usage)
   - [License](#license)
 
@@ -39,6 +40,15 @@ The MDPU (Multi-Dimensional Processing Unit) is a theoretical PU (Processing Uni
 - `BZ` - Branch if zero
 - `BNZ` - Branch if not zero
 - `HALT` - Halt the program
+
+## Practical Usage
+The MDPU is a theoretical processor. If it were to be implemented in hardware, it would have many practical use cases. Some use cases are:
+
+1. **Machine Learning**: The MDPU can be used to perform matrix operations for machine learning algorithms.
+2. **Image Processing**: The MDPU can be used to perform image processing operations.
+3. **Gaming**: The MDPU can be used to perform complex calculations for gaming.
+4. **Scientific Computing**: The MDPU can be used to perform complex calculations for scientific computing.
+5. **Data Processing**: The MDPU can be used to process large amounts of data.
 
 ## Usage
 To compile the program, run the following command:

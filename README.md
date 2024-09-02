@@ -64,9 +64,9 @@ gcc -o mdpu mdpu.c
 
 To run the MDPU emulator, run the following command:
 ```sh
-./mdpu 4x4 10
+./mdpu 4x4 10 0.instr
 ```
-This will run the MDPU emulator with 4x4 (16) registers and 10 memory cells.
+This will run the MDPU emulator on the `0.instr` file with 4x4 (16) registers and 10 memory cells.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

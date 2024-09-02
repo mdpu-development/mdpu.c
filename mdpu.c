@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // Define the structure of the multi-dimensional processing unit
 typedef struct {
@@ -474,9 +475,86 @@ int parse_dimensions(char *size_str) {
     return total_size;
 }
 
+// Function to convert string to uppercase
+void str_to_upper(char *str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = toupper((unsigned char)str[i]);
+    }
+}
+
+// Function to parse opcode from string
+Opcode parse_opcode(const char *str) {
+    if (strcmp(str, "ADD") == 0) return ADD;
+    if (strcmp(str, "SUB") == 0) return SUB;
+    if (strcmp(str, "MUL") == 0) return MUL;
+    if (strcmp(str, "DIV") == 0) return DIV;
+    if (strcmp(str, "STORE") == 0) return STORE;
+    if (strcmp(str, "LOAD") == 0) return LOAD;
+    if (strcmp(str, "LOAD_IMMEDIATE") == 0) return LOAD_IMMEDIATE;
+    if (strcmp(str, "PUSH") == 0) return PUSH;
+    if (strcmp(str, "POP") == 0) return POP;
+    if (strcmp(str, "JMP") == 0) return JMP;
+    if (strcmp(str, "JZ") == 0) return JZ;
+    if (strcmp(str, "JNZ") == 0) return JNZ;
+    if (strcmp(str, "MOV") == 0) return MOV;
+    if (strcmp(str, "JE") == 0) return JE;
+    if (strcmp(str, "JNE") == 0) return JNE;
+    if (strcmp(str, "AND") == 0) return AND;
+    if (strcmp(str, "OR") == 0) return OR;
+    if (strcmp(str, "XOR") == 0) return XOR;
+    if (strcmp(str, "NOT") == 0) return NOT;
+    if (strcmp(str, "SHL") == 0) return SHL;
+    if (strcmp(str, "SHR") == 0) return SHR;
+    if (strcmp(str, "CMP") == 0) return CMP;
+    if (strcmp(str, "TEST") == 0) return TEST;
+    if (strcmp(str, "B") == 0) return B;
+    if (strcmp(str, "BZ") == 0) return BZ;
+    if (strcmp(str, "BNZ") == 0) return BNZ;
+    if (strcmp(str, "HALT") == 0) return HALT;
+    
+    printf("Error: Unknown opcode %s\n", str);
+    exit(1);
+}
+
+// Function to parse instruction file
+Instruction* parse_instruction_file(const char* filename, int* program_size) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Error: Cannot open file %s\n", filename);
+        exit(1);
+    }
+
+    Instruction* program = NULL;
+    int capacity = 10;
+    *program_size = 0;
+    program = malloc(capacity * sizeof(Instruction));
+
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (*program_size >= capacity) {
+            capacity *= 2;
+            program = realloc(program, capacity * sizeof(Instruction));
+        }
+
+        char opcode_str[20];
+        int reg1, reg2, reg3, addr, immediate;
+        sscanf(line, "%s %d %d %d %d %d", opcode_str, &reg1, &reg2, &reg3, &addr, &immediate);
+        
+        str_to_upper(opcode_str);
+        Opcode opcode = parse_opcode(opcode_str);
+
+        program[*program_size] = (Instruction){opcode, reg1, reg2, reg3, addr, immediate};
+        (*program_size)++;
+    }
+
+    fclose(file);
+    return program;
+}
+
+// Modify the main function to use the new parser
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s <register_size_dimensions> <memory_size_dimensions>\n", argv[0]);
+    if (argc != 4) {
+        printf("Usage: %s <register_size_dimensions> <memory_size_dimensions> <instruction_file>\n", argv[0]);
         exit(1);
     }
 
@@ -487,21 +565,16 @@ int main(int argc, char *argv[]) {
     ProcessingUnit pu;
     initialize(&pu, total_registers, total_memory);
 
-    // Example program (OP codes with some dummy values)
-    Instruction program[] = {
-        {LOAD_IMMEDIATE, 0, 0, 0, 0, 10},
-        {LOAD_IMMEDIATE, 1, 0, 0, 0, 20},
-        {ADD, 0, 1, 2, 0, 0},
-        {STORE, 2, 0, 0, 0, 0},
-        {HALT, 0, 0, 0, 0, 0}
-    };
-    int program_size = sizeof(program) / sizeof(program[0]);
+    // Parse the instruction file
+    int program_size;
+    Instruction* program = parse_instruction_file(argv[3], &program_size);
 
     // Run the program
     ProcessingUnitState state = run(&pu, program, program_size, 1000);
 
     // Clean up
     post_run(&state, &pu);
+    free(program);
 
     return 0;
 }

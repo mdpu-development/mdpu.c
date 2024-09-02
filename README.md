@@ -51,6 +51,12 @@ The MDPU is a theoretical processor. If it were to be implemented in hardware, i
 5. **Data Processing**: The MDPU can be used to process large amounts of data.
 
 ## Usage
+To clone the repository, you can use git:
+```sh
+git clone https://github.com/zanderlewis/mdpu.c
+cd mdpu.c
+```
+
 To compile the program, run the following command:
 ```sh
 gcc -o mdpu mdpu.c

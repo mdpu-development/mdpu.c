@@ -21,6 +21,7 @@ typedef struct {
 
 // Define opcodes
 typedef enum {
+    NOP,
     ADD,
     SUB,
     MUL,
@@ -510,6 +511,9 @@ Opcode parse_opcode(const char *str) {
     char opcode_str[20];
     sscanf(str, "%s", opcode_str);  // Extract the first word
 
+    if (strcmp(opcode_str, "") == 0) return NOP;
+    if (strcmp(opcode_str, "//") == 0) return NOP;
+    if (strcmp(opcode_str, "NOP") == 0) return NOP;
     if (strcmp(opcode_str, "ADD") == 0) return ADD;
     if (strcmp(opcode_str, "SUB") == 0) return SUB;
     if (strcmp(opcode_str, "MUL") == 0) return MUL;
@@ -570,6 +574,10 @@ Instruction* parse_instruction_file(const char* filename, int* program_size) {
         
         str_to_upper(opcode_str);
         Opcode opcode = parse_opcode(opcode_str);
+
+        if (opcode == NOP) {
+            continue;
+        }
 
         program[*program_size] = (Instruction){opcode, reg1, reg2, reg3, addr, immediate};
         (*program_size)++;

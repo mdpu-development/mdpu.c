@@ -21,7 +21,6 @@ typedef struct {
 
 // Define opcodes
 typedef enum {
-    NOP,
     ADD,
     SUB,
     MUL,
@@ -335,8 +334,6 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
 
         Instruction instr = program[instruction_pointer];
         switch (instr.opcode) {
-            case NOP:
-                break;
             case ADD:
                 add(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
@@ -424,6 +421,9 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
                 break;
             case HALT:
                 return;
+            default:
+                printf("Error: Unknown opcode %d\n", instr.opcode);
+                exit(1);
         }
         instruction_pointer++;
         instruction_count++;
@@ -507,38 +507,40 @@ void str_to_upper(char *str) {
 
 // Function to parse opcode from string
 Opcode parse_opcode(const char *str) {
-    if (strcmp(str, "NOP") == 0) return NOP;
-    if (strcmp(str, "ADD") == 0) return ADD;
-    if (strcmp(str, "SUB") == 0) return SUB;
-    if (strcmp(str, "MUL") == 0) return MUL;
-    if (strcmp(str, "DIV") == 0) return DIV;
-    if (strcmp(str, "STORE") == 0) return STORE;
-    if (strcmp(str, "LOAD") == 0) return LOAD;
-    if (strcmp(str, "LOAD_IMMEDIATE") == 0) return LOAD_IMMEDIATE;
-    if (strcmp(str, "PUSH") == 0) return PUSH;
-    if (strcmp(str, "POP") == 0) return POP;
-    if (strcmp(str, "JMP") == 0) return JMP;
-    if (strcmp(str, "JZ") == 0) return JZ;
-    if (strcmp(str, "JNZ") == 0) return JNZ;
-    if (strcmp(str, "MOV") == 0) return MOV;
-    if (strcmp(str, "JE") == 0) return JE;
-    if (strcmp(str, "JNE") == 0) return JNE;
-    if (strcmp(str, "AND") == 0) return AND;
-    if (strcmp(str, "OR") == 0) return OR;
-    if (strcmp(str, "XOR") == 0) return XOR;
-    if (strcmp(str, "NOT") == 0) return NOT;
-    if (strcmp(str, "SHL") == 0) return SHL;
-    if (strcmp(str, "SHR") == 0) return SHR;
-    if (strcmp(str, "CMP") == 0) return CMP;
-    if (strcmp(str, "TEST") == 0) return TEST;
-    if (strcmp(str, "B") == 0) return B;
-    if (strcmp(str, "BZ") == 0) return BZ;
-    if (strcmp(str, "BNZ") == 0) return BNZ;
-    if (strcmp(str, "NEG") == 0) return NEG;
-    if (strcmp(str, "ABS") == 0) return ABS;
-    if (strcmp(str, "HALT") == 0) return HALT;
+    char opcode_str[20];
+    sscanf(str, "%s", opcode_str);  // Extract the first word
+
+    if (strcmp(opcode_str, "ADD") == 0) return ADD;
+    if (strcmp(opcode_str, "SUB") == 0) return SUB;
+    if (strcmp(opcode_str, "MUL") == 0) return MUL;
+    if (strcmp(opcode_str, "DIV") == 0) return DIV;
+    if (strcmp(opcode_str, "STORE") == 0) return STORE;
+    if (strcmp(opcode_str, "LOAD") == 0) return LOAD;
+    if (strcmp(opcode_str, "LOAD_IMMEDIATE") == 0) return LOAD_IMMEDIATE;
+    if (strcmp(opcode_str, "PUSH") == 0) return PUSH;
+    if (strcmp(opcode_str, "POP") == 0) return POP;
+    if (strcmp(opcode_str, "JMP") == 0) return JMP;
+    if (strcmp(opcode_str, "JZ") == 0) return JZ;
+    if (strcmp(opcode_str, "JNZ") == 0) return JNZ;
+    if (strcmp(opcode_str, "MOV") == 0) return MOV;
+    if (strcmp(opcode_str, "JE") == 0) return JE;
+    if (strcmp(opcode_str, "JNE") == 0) return JNE;
+    if (strcmp(opcode_str, "AND") == 0) return AND;
+    if (strcmp(opcode_str, "OR") == 0) return OR;
+    if (strcmp(opcode_str, "XOR") == 0) return XOR;
+    if (strcmp(opcode_str, "NOT") == 0) return NOT;
+    if (strcmp(opcode_str, "SHL") == 0) return SHL;
+    if (strcmp(opcode_str, "SHR") == 0) return SHR;
+    if (strcmp(opcode_str, "CMP") == 0) return CMP;
+    if (strcmp(opcode_str, "TEST") == 0) return TEST;
+    if (strcmp(opcode_str, "B") == 0) return B;
+    if (strcmp(opcode_str, "BZ") == 0) return BZ;
+    if (strcmp(opcode_str, "BNZ") == 0) return BNZ;
+    if (strcmp(opcode_str, "NEG") == 0) return NEG;
+    if (strcmp(opcode_str, "ABS") == 0) return ABS;
+    if (strcmp(opcode_str, "HALT") == 0) return HALT;
     
-    printf("Error: Unknown opcode %s\n", str);
+    printf("Error: Unknown opcode %s\n", opcode_str);
     exit(1);
 }
 

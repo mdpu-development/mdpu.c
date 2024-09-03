@@ -21,6 +21,7 @@ typedef struct {
 
 // Define opcodes
 typedef enum {
+    NOP,
     ADD,
     SUB,
     MUL,
@@ -47,6 +48,8 @@ typedef enum {
     B,
     BZ,
     BNZ,
+    NEG,
+    ABS,
     HALT
 } Opcode;
 
@@ -139,6 +142,18 @@ void divide(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
         printf("Error: Division by zero on R%d of value %d\n", reg2, pu->registers[reg2]);
         exit(1);
     }
+}
+
+void neg(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    pu->registers[reg2] = -pu->registers[reg1];
+}
+
+void absolute(ProcessingUnit *pu, int reg1, int reg2) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    pu->registers[reg2] = abs(pu->registers[reg1]);
 }
 
 // ++++++++++++++++++++++++++++++ Memory operations ++++++++++++++++++++++++++++++ //
@@ -320,6 +335,8 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
 
         Instruction instr = program[instruction_pointer];
         switch (instr.opcode) {
+            case NOP:
+                break;
             case ADD:
                 add(pu, instr.reg1, instr.reg2, instr.reg3);
                 break;
@@ -399,6 +416,12 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
             case BNZ:
                 bnz(pu, &instruction_pointer, instr.reg1, instr.addr);
                 continue;
+            case NEG:
+                neg(pu, instr.reg1, instr.reg2);
+                break;
+            case ABS:
+                absolute(pu, instr.reg1, instr.reg2);
+                break;
             case HALT:
                 return;
         }
@@ -484,6 +507,7 @@ void str_to_upper(char *str) {
 
 // Function to parse opcode from string
 Opcode parse_opcode(const char *str) {
+    if (strcmp(str, "NOP") == 0) return NOP;
     if (strcmp(str, "ADD") == 0) return ADD;
     if (strcmp(str, "SUB") == 0) return SUB;
     if (strcmp(str, "MUL") == 0) return MUL;
@@ -510,6 +534,8 @@ Opcode parse_opcode(const char *str) {
     if (strcmp(str, "B") == 0) return B;
     if (strcmp(str, "BZ") == 0) return BZ;
     if (strcmp(str, "BNZ") == 0) return BNZ;
+    if (strcmp(str, "NEG") == 0) return NEG;
+    if (strcmp(str, "ABS") == 0) return ABS;
     if (strcmp(str, "HALT") == 0) return HALT;
     
     printf("Error: Unknown opcode %s\n", str);

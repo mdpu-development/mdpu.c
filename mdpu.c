@@ -508,7 +508,7 @@ ProcessingUnitState run(ProcessingUnit *pu, Instruction *program, int program_si
     return state;
 }
 
-void post_run(ProcessingUnitState *state, ProcessingUnit *pu) {
+void post_run(ProcessingUnitState *state, ProcessingUnit *pu, Instruction *program) {
     int num_registers = pu->num_registers;
 
     printf("Registers:\n");
@@ -519,6 +519,10 @@ void post_run(ProcessingUnitState *state, ProcessingUnit *pu) {
     printf("Stack:\n");
     for (int i = 0; i < state->stack_size; i++) {
         printf("S%d: %d\n", i, state->stack[i]);
+    }
+
+    if (program != NULL) {
+        free(program);
     }
 
     free_processing_unit_state(state);
@@ -655,8 +659,7 @@ int main(int argc, char *argv[]) {
     ProcessingUnitState state = run(&pu, program, program_size, 1000);
 
     // Clean up
-    post_run(&state, &pu);
-    free(program);
+    post_run(&state, &pu, program);
 
     exit(0);
 }

@@ -520,7 +520,7 @@ Opcode parse_opcode(const char *str) {
     if (strcmp(opcode_str, "DIV") == 0) return DIV;
     if (strcmp(opcode_str, "STORE") == 0) return STORE;
     if (strcmp(opcode_str, "LOAD") == 0) return LOAD;
-    if (strcmp(opcode_str, "LOAD_IMMEDIATE") == 0) return LOAD_IMMEDIATE;
+    if (strcmp(opcode_str, "LI") == 0) return LOAD_IMMEDIATE;
     if (strcmp(opcode_str, "PUSH") == 0) return PUSH;
     if (strcmp(opcode_str, "POP") == 0) return POP;
     if (strcmp(opcode_str, "JMP") == 0) return JMP;

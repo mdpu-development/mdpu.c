@@ -50,6 +50,9 @@ typedef enum {
     BNZ,
     NEG,
     ABS,
+    MOD,
+    INC,
+    DEC,
     HALT
 } Opcode;
 
@@ -154,6 +157,18 @@ void absolute(ProcessingUnit *pu, int reg1, int reg2) {
     check_register_bounds(pu, reg1);
     check_register_bounds(pu, reg2);
     pu->registers[reg2] = abs(pu->registers[reg1]);
+}
+
+void mod(ProcessingUnit *pu, int reg1, int reg2, int reg3) {
+    check_register_bounds(pu, reg1);
+    check_register_bounds(pu, reg2);
+    check_register_bounds(pu, reg3);
+    if (pu->registers[reg2] != 0) {
+        pu->registers[reg3] = pu->registers[reg1] % pu->registers[reg2];
+    } else {
+        printf("Error: Division by zero on R%d of value %d\n", reg2, pu->registers[reg2]);
+        exit(1);
+    }
 }
 
 // ++++++++++++++++++++++++++++++ Memory operations ++++++++++++++++++++++++++++++ //
@@ -321,6 +336,17 @@ void bnz(ProcessingUnit *pu, int *instruction_pointer, int reg, int addr) {
     }
 }
 
+// ++++++++++++++++++++++++++++++ Increment/Decrement operations ++++++++++++++++++++++++++++++ //
+void inc(ProcessingUnit *pu, int reg) {
+    check_register_bounds(pu, reg);
+    pu->registers[reg]++;
+}
+
+void dec(ProcessingUnit *pu, int reg) {
+    check_register_bounds(pu, reg);
+    pu->registers[reg]--;
+}
+
 // ++++++++++++++++++++++++++++++ Program execution ++++++++++++++++++++++++++++++ //
 void execute_program(ProcessingUnit *pu, Instruction *program, int program_size, int mic) {
     const int MAX_INSTRUCTION_COUNT = mic;
@@ -419,6 +445,15 @@ void execute_program(ProcessingUnit *pu, Instruction *program, int program_size,
                 break;
             case ABS:
                 absolute(pu, instr.reg1, instr.reg2);
+                break;
+            case MOD:
+                mod(pu, instr.reg1, instr.reg2, instr.reg3);
+                break;
+            case INC:
+                inc(pu, instr.reg1);
+                break;
+            case DEC:
+                dec(pu, instr.reg1);
                 break;
             case HALT:
                 return;
@@ -550,6 +585,9 @@ Opcode parse_opcode(const char *str) {
     // Other operations
     if (strcmp(opcode_str, "NEG") == 0) return NEG;
     if (strcmp(opcode_str, "ABS") == 0) return ABS;
+    if (strcmp(opcode_str, "MOD") == 0) return MOD;
+    if (strcmp(opcode_str, "INC") == 0) return INC;
+    if (strcmp(opcode_str, "DEC") == 0) return DEC;
     if (strcmp(opcode_str, "HALT") == 0) return HALT;
     
     printf("Error: Unknown opcode %s. Defaulting to NOP.\n", opcode_str);

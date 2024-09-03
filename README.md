@@ -39,6 +39,11 @@ The MDPU (Multi-Dimensional Processing Unit) is a theoretical PU (Processing Uni
 - `B` - Branch to a location
 - `BZ` - Branch if zero
 - `BNZ` - Branch if not zero
+- `NEG` - Negate a value
+- `ABS` - Absolute value
+- `MOD` - Modulus
+- `INC` - Increment a value
+- `DEC` - Decrement a value
 - `HALT` - Halt the program
 
 ## Practical Usage
@@ -64,9 +69,9 @@ gcc -o mdpu mdpu.c
 
 To run the MDPU emulator, run the following command:
 ```sh
-./mdpu 9x2 10 0.instr
+./mdpu 9x2 100 programs/0.instr
 ```
-This will run the MDPU emulator on the `0.instr` file with 9x2 (18) registers and 10 memory cells.
+This will run the MDPU emulator on the `programs/0.instr` file with 9x2 (18) registers and 100 memory cells.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

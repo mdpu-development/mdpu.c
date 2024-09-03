@@ -19,7 +19,7 @@ The MDPU (Multi-Dimensional Processing Unit) is a theoretical PU (Processing Uni
 - `DIV` - Divide two values
 - `STORE` - Store a value
 - `LOAD` - Load a value
-- `LOAD_IMMEDIATE` - Load an immediate value
+- `LI` - Load an immediate value
 - `PUSH` - Push a value onto the stack
 - `POP` - Pop a value from the stack
 - `JMP` - Jump to a location

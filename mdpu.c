@@ -511,21 +511,26 @@ Opcode parse_opcode(const char *str) {
     char opcode_str[20];
     sscanf(str, "%s", opcode_str);  // Extract the first word
 
+    // Ignore comments and empty lines and NOP
     if (strcmp(opcode_str, "") == 0) return NOP;
     if (strcmp(opcode_str, "//") == 0) return NOP;
     if (strcmp(opcode_str, "NOP") == 0) return NOP;
+    // Arithmetic operations
     if (strcmp(opcode_str, "ADD") == 0) return ADD;
     if (strcmp(opcode_str, "SUB") == 0) return SUB;
     if (strcmp(opcode_str, "MUL") == 0) return MUL;
     if (strcmp(opcode_str, "DIV") == 0) return DIV;
+    // Memory operations
     if (strcmp(opcode_str, "STORE") == 0) return STORE;
     if (strcmp(opcode_str, "LOAD") == 0) return LOAD;
     if (strcmp(opcode_str, "LI") == 0) return LOAD_IMMEDIATE;
     if (strcmp(opcode_str, "PUSH") == 0) return PUSH;
     if (strcmp(opcode_str, "POP") == 0) return POP;
+    // Jump operations
     if (strcmp(opcode_str, "JMP") == 0) return JMP;
     if (strcmp(opcode_str, "JZ") == 0) return JZ;
     if (strcmp(opcode_str, "JNZ") == 0) return JNZ;
+    // Bitwise operations
     if (strcmp(opcode_str, "MOV") == 0) return MOV;
     if (strcmp(opcode_str, "JE") == 0) return JE;
     if (strcmp(opcode_str, "JNE") == 0) return JNE;
@@ -535,17 +540,20 @@ Opcode parse_opcode(const char *str) {
     if (strcmp(opcode_str, "NOT") == 0) return NOT;
     if (strcmp(opcode_str, "SHL") == 0) return SHL;
     if (strcmp(opcode_str, "SHR") == 0) return SHR;
+    // Comparison operations
     if (strcmp(opcode_str, "CMP") == 0) return CMP;
     if (strcmp(opcode_str, "TEST") == 0) return TEST;
+    // Branch operations
     if (strcmp(opcode_str, "B") == 0) return B;
     if (strcmp(opcode_str, "BZ") == 0) return BZ;
     if (strcmp(opcode_str, "BNZ") == 0) return BNZ;
+    // Other operations
     if (strcmp(opcode_str, "NEG") == 0) return NEG;
     if (strcmp(opcode_str, "ABS") == 0) return ABS;
     if (strcmp(opcode_str, "HALT") == 0) return HALT;
     
-    printf("Error: Unknown opcode %s\n", opcode_str);
-    exit(1);
+    printf("Error: Unknown opcode %s. Defaulting to NOP.\n", opcode_str);
+    return NOP;
 }
 
 // Function to parse instruction file
@@ -612,5 +620,5 @@ int main(int argc, char *argv[]) {
     post_run(&state, &pu);
     free(program);
 
-    return 0;
+    exit(0);
 }
